@@ -15,23 +15,23 @@ DB_SCHEMA="""
     Все документы всех организаций - documents(
         id_doc TEXT - id_doc метаданная чанка в weaviate, 
         name TEXT - наименование документа, 
-        type_doc TEXT - тип документа: РЕГЛАМЕНТ/ДИ/ПРОЦЕДУРА/ИНСТРУКЦИЯ/ПОРЯДОК/ПОЛОЖЕНИЕ/other/КОДЕКС/ПРАВИЛА/ПОЛИТИКА, 
-        organization TEXT - организация: MUNAIZAT/ТРЕЙД ОЙЛ/ОКС/SECURIFORCE/АЛЬФА ОЙЛ, 
+        type_doc TEXT - тип документа: , 
+        organization TEXT - организация: , 
         source TEXT - ссылка на гугл диск, 
         added_date TIMESTAMP WITH TIME ZONE yyyy-mm-dd hh:mm:ss
         )
-    ВАЖНО!!! НЕ ИСПОСЛЬЗОВАТЬ ФИЛЬТР "WHERE organization = 'АЛЬФА ОЙЛ'" ДЛЯ ТАБЛИЦ acronyms, departments, job_instructions!!!
-    список сокращений в Альфа Ойл - acronyms(
+    ВАЖНО!!! НЕ ИСПОСЛЬЗОВАТЬ ФИЛЬТР "WHERE organization = ' '" ДЛЯ ТАБЛИЦ acronyms, departments, job_instructions!!!
+    список сокращений в  - acronyms(
         long_name TEXT - полная формулировка, 
         short_name TEXT - сокращенная запись
         )
-    список отделов в Альфа Ойл - departments(
+    список отделов в  - departments(
         id INT - просто id,
         id_doc - id_doc документа отдела и метаданная чанка в weaviate,
         long_name - полное наименование отдела, например "Отдел по правовым вопросам"
         short_name - сокращенное название отдел, например "ОПВ"
         )
-    список должностей в Альфа Ойл, касается сотрудников отдела, не самих отделов - job_instructions(
+    список должностей в , касается сотрудников отдела, не самих отделов - job_instructions(
         id - bigserial,
         department_id - int4, к какому отделу относится должность
         position_name - text, название должности
