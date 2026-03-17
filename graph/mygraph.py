@@ -8,18 +8,18 @@ from graph.tools import *
 from prompts import *
 import json
 import os
-
+from graph.responce_formats import evaluator_response, planner_response
 
 load_dotenv()
 
 stream_llm = ChatOpenAI(
-    model="gpt-4.1",
+    model="gpt-5.2",
     streaming=True,
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
 llm = ChatOpenAI(
-    model="gpt-4.1",
+    model="gpt-5.2",
     temperature=0,
     streaming=False,   # КЛЮЧЕВО
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -39,21 +39,6 @@ class State(TypedDict):
 
 
 
-def safe_json_loads(text: str) -> dict:
-    text = text.strip()
-
-    # убрать markdown
-    if text.startswith("```"):
-        text = text.split("```")[1]
-
-    start = text.find("{")
-    end = text.rfind("}")
-    if start == -1 or end == -1:
-        raise ValueError(f"JSON not found in:\n{text}")
-
-    return json.loads(text[start:end + 1])
-
-
 def planner_node(state: State) -> dict:
     system = {
         "role": "system",
@@ -64,11 +49,10 @@ def planner_node(state: State) -> dict:
         "content": state.get('tool_calls')
     }
     msgs = state["messages"]
-    ai = llm.invoke([system] + msgs)
-    data = safe_json_loads(ai.content)
+    ai = llm.with_structured_output(planner_response).invoke([system] + msgs)
     return {
-        "plan": data["plan"],
-        "route": data["route"],
+        "plan": ai.plan,
+        "route": ai.route,
         "__event__": "planner",
     }
    
@@ -83,7 +67,7 @@ def rag_node(state: State) -> dict:
     msgs = state["messages"]
     ai = rag_llm.invoke([system] + msgs)
     return {"messages": [ai],
-            "tool_calls": state.get("tool_calls") or 0 + 1}
+            "tool_calls": state.get("tool_calls", 0) + 1}
 
 sql_llm = llm.bind_tools([db_sql])
 
@@ -95,7 +79,7 @@ def sql_node(state: State) -> dict:
     msgs = state["messages"]
     ai = sql_llm.invoke([system] + msgs)
     return {"messages": [ai],
-            "tool_calls": state.get("tool_calls") or 0 + 1}
+            "tool_calls": state.get("tool_calls", 0) + 1}
 
 
 def evaluator_node(state: State) -> dict:
@@ -104,8 +88,8 @@ def evaluator_node(state: State) -> dict:
         "content": evaluator_prompt
     }
     msgs = state["messages"]
-    ai = llm.invoke([system] + msgs)
-    ok = ai.content.strip().upper() == "YES"
+    ai = llm.with_structured_output(evaluator_response).invoke([system] + msgs)
+    ok = ai.evaluation
     return {"tool_ok": ok}
 
 
@@ -163,7 +147,7 @@ builder.add_conditional_edges(
 
 builder.add_conditional_edges(
     "evaluator",
-    lambda s: "final" if s["tool_ok"] or s["tool_calls"]>10 else "planner",
+    lambda s: "final" if s.get("tool_ok") or s.get("tool_calls", 0) >= 10 else "planner",
     {
         "final": "final",
         "planner": "planner"

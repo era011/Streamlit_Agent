@@ -48,7 +48,7 @@ def weaviate_func(id_doc:Optional[str], query: str, organization: str , section:
     res = chunks.query.hybrid(
         query=query,
         alpha=0.6,
-        limit=10,
+        limit=15,
         vector=vec,
         filters=where_filter, 
         return_metadata=MetadataQuery(score=True),
